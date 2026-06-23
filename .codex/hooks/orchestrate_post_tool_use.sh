@@ -35,7 +35,7 @@ def candidate_paths(value):
         # Direct absolute/relative paths in JSON payloads.
         for token in value.replace("\n", " ").split():
             token = token.strip("\"',")
-            if "/reports/" in token and token.endswith(".md"):
+            if ("/tasks/" in token or "/reports/" in token) and token.endswith(".md"):
                 yield token
         # Codex apply_patch payloads.
         for line in value.splitlines():
@@ -52,11 +52,11 @@ def candidate_paths(value):
 
 if not file_path:
     for candidate in candidate_paths(tool_input):
-        if "/reports/" in candidate or candidate.startswith("DAY/reports/"):
+        if "/tasks/" in candidate or "/reports/" in candidate:
             file_path = candidate
             break
 
-if not file_path or "/reports/" not in file_path:
+if not file_path or ("/tasks/" not in file_path and "/reports/" not in file_path):
     raise SystemExit(0)
 
 if not file_path.startswith("/"):

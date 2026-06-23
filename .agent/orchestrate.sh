@@ -78,6 +78,15 @@ for line in sys.stdin:
 " 2>/dev/null || echo ""
 }
 
+cmux_output() {
+    local output
+    if ! output=$(cmux "$@" 2>&1); then
+        echo "ERROR: cmux $* failed: $output" >&2
+        return 1
+    fi
+    printf '%s\n' "$output"
+}
+
 # ─── 헬퍼: 파일명에서 에이전트 결정 ───
 resolve_agent() {
     local team="$1"
@@ -288,24 +297,29 @@ spawn_worker() {
     local existing_surface
     existing_surface=$(find_surface_by_name "$tab_name" 2>/dev/null || echo "")
     if [ -n "$existing_surface" ]; then
-        cmux send --surface "$existing_surface" "새 태스크가 큐에 추가됐다. ${PROJECT_DIR}/tasks/${team}/ 에서 미처리 태스크를 확인하고 처리해. .processed 파일 기준으로 아직 처리 안 된 것만 순서대로."
-        cmux send-key --surface "$existing_surface" enter
-        cmux notify --title "[$PROJECT] Task → $role" --body "$task_file"
+        cmux_output send --surface "$existing_surface" "새 태스크가 큐에 추가됐다. ${PROJECT_DIR}/tasks/${team}/ 에서 미처리 태스크를 확인하고 처리해. .processed 파일 기준으로 아직 처리 안 된 것만 순서대로." >/dev/null
+        cmux_output send-key --surface "$existing_surface" enter >/dev/null
+        cmux notify --title "[$PROJECT] Task → $role" --body "$task_file" 2>/dev/null || true
         return 0
     fi
 
     # 같은 workspace 안에서 오른쪽으로 split
     local new_surface
-    new_surface=$(cmux new-split right 2>/dev/null | grep -oE 'surface:[0-9]+' | head -1)
-    [ -z "$new_surface" ] && exit 1
+    local split_output
+    split_output=$(cmux_output new-split right)
+    new_surface=$(printf '%s\n' "$split_output" | grep -oE 'surface:[0-9]+' | head -1 || true)
+    if [ -z "$new_surface" ]; then
+        echo "ERROR: cmux new-split did not return a surface ref. Output: $split_output" >&2
+        return 1
+    fi
 
     # tab 이름으로 식별 가능하게 설정
-    cmux rename-tab --surface "$new_surface" "$tab_name" 2>/dev/null
+    cmux_output rename-tab --surface "$new_surface" "$tab_name" >/dev/null
 
     # 선택된 runtime 실행
     sleep 0.5
-    cmux send --surface "$new_surface" "$(worker_command "$runtime")" 2>/dev/null
-    cmux send-key --surface "$new_surface" enter 2>/dev/null
+    cmux_output send --surface "$new_surface" "$(worker_command "$runtime")" >/dev/null
+    cmux_output send-key --surface "$new_surface" enter >/dev/null
 
     # runtime 시작 대기
     sleep 3
@@ -324,8 +338,8 @@ spawn_worker() {
         prompt="$(render_worker_prompt "$runtime" "$team" "$agent" "$agent_dir")"
     fi
 
-    cmux send --surface "$new_surface" "$prompt" 2>/dev/null
-    cmux send-key --surface "$new_surface" enter 2>/dev/null
+    cmux_output send --surface "$new_surface" "$prompt" >/dev/null
+    cmux_output send-key --surface "$new_surface" enter >/dev/null
     cmux notify --title "[$PROJECT] Spawned $role" --body "$task_file" 2>/dev/null
 }
 
@@ -364,8 +378,8 @@ elif [[ "$FILE_PATH" == *"/reports/"* ]]; then
         ADMIN_SURFACE=$(cat "$ADMIN_SURFACE_FILE")
     fi
     if [ -n "$ADMIN_SURFACE" ]; then
-        cmux send --surface "$ADMIN_SURFACE" "리포트가 도착했다. $PROJECT_DIR/reports/$FILENAME 읽고 확인해"
-        cmux send-key --surface "$ADMIN_SURFACE" enter
+        cmux_output send --surface "$ADMIN_SURFACE" "리포트가 도착했다. $PROJECT_DIR/reports/$FILENAME 읽고 확인해" >/dev/null
+        cmux_output send-key --surface "$ADMIN_SURFACE" enter >/dev/null
         cmux notify --title "[$PROJECT] Report" --body "$FILENAME"
     fi
 fi
