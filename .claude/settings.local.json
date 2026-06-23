@@ -11,5 +11,10 @@
         ]
       }
     ]
+  },
+  "permissions": {
+    "allow": [
+      "Bash(ORCHESTRATE_DRY_RUN=1 ORCHESTRATION_RUNTIME=claude bash -c ' *)"
+    ]
   }
 }

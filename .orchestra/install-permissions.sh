@@ -127,6 +127,39 @@ for entry in entries:
     if entry not in allow:
         allow.append(entry)
 
+# Install the report-notify hook so workers running inside the source project
+# trigger this orchestration root's adapter when they write reports/.processed.
+# Kept additive: any pre-existing hooks (e.g. another orchestration root) are
+# preserved, and each adapter early-exits on paths outside its own root.
+hook_command = f"{orchestration_root}/.claude/orchestrate.sh"
+
+hooks = data.setdefault("hooks", {})
+if not isinstance(hooks, dict):
+    hooks = {}
+    data["hooks"] = hooks
+
+post = hooks.setdefault("PostToolUse", [])
+if not isinstance(post, list):
+    post = []
+    hooks["PostToolUse"] = post
+
+
+def has_command(blocks, command):
+    for block in blocks:
+        if not isinstance(block, dict):
+            continue
+        for hook in block.get("hooks", []) or []:
+            if isinstance(hook, dict) and hook.get("command") == command:
+                return True
+    return False
+
+
+if not has_command(post, hook_command):
+    post.append({
+        "matcher": "Write|Edit",
+        "hooks": [{"type": "command", "command": hook_command}],
+    })
+
 settings_path.write_text(json.dumps(data, indent=2, ensure_ascii=False) + "\n")
 PY
 }

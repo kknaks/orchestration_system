@@ -1,0 +1,15 @@
+{
+  "project_name": "kknaks_profile",
+  "project_dir": "/Users/kknaks/git/toy_pr2/kknaks_profile",
+  "runtime": {
+    "default": "inherit",
+    "teams": {},
+    "agents": {}
+  },
+  "agents": {
+    "planning": {
+      "default": "planner",
+      "hints": {}
+    }
+  }
+}
