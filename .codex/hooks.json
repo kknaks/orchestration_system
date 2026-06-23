@@ -1,0 +1,17 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": ".*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .codex/hooks/orchestrate_post_tool_use.sh",
+            "timeout": 30,
+            "statusMessage": "Running Codex orchestration hook"
+          }
+        ]
+      }
+    ]
+  }
+}

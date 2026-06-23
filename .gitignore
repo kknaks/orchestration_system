@@ -1,0 +1,10 @@
+.DS_Store
+*.log
+*.tmp
+
+# Runtime state
+*/.admin_surface
+*/.processed
+
+# Local editor/runtime noise
+.claude/scheduled_tasks.lock
