@@ -108,6 +108,9 @@ bash -n "$SCRIPT_DIR/.claude/orchestrate.sh"
 echo "Creating project scaffold..."
 bash "$SCRIPT_DIR/.orchestra/init-project.sh" "$PROJECT_NAME" "$SOURCE_DIR" "${TEAM_ARGS[@]}"
 
+echo "Installing project runtime permissions..."
+bash "$SCRIPT_DIR/.orchestra/install-permissions.sh" "$PROJECT_NAME" "$SOURCE_DIR"
+
 cat <<EOF
 
 OK: setup complete.

@@ -36,14 +36,20 @@ bash setup.sh --non-interactive --project myapp --source /absolute/path/to/myapp
 ## What Setup Does
 
 - installs Codex hook trust state into the current user's `~/.codex/config.toml`
+- marks both the orchestration repo and source project as trusted Codex projects
 - validates Claude hook settings
+- installs source-project Claude permissions for reading queue context and writing reports
 - creates `{PROJECT}/config.json`
 - creates `{PROJECT}/agents/{team}/{agent}/`
 - creates `{PROJECT}/tasks/{team}/`, `{PROJECT}/reports/`, and `{PROJECT}/plans/`
 
 For Claude users, `.claude/settings.local.json` is already included in the repo. Claude Code loads it when this orchestration repo is opened, and its `PostToolUse` hook calls `.claude/orchestrate.sh`.
 
+Setup also creates or updates `{SOURCE_PROJECT}/.claude/settings.local.json` so Claude workers launched inside the source project can read orchestration task context and write report state back to this repo.
+
 For Codex users, setup writes the hook trust state into the current user's Codex config so `/hooks -> t` is not required for the bundled template hook.
+
+Setup also writes Codex project trust entries for both the orchestration repo and the source project.
 
 ## Using With Claude
 
@@ -139,6 +145,7 @@ Runtime resolution order:
 
 ```bash
 bash -n setup.sh .orchestra/init-project.sh
+bash -n .orchestra/install-permissions.sh
 bash -n .agent/orchestrate.sh .agent/workers/claude.sh .agent/workers/codex.sh
 bash -n .claude/orchestrate.sh .codex/orchestrate.sh .codex/hooks/orchestrate_post_tool_use.sh
 python3 -m json.tool .claude/settings.local.json >/dev/null
